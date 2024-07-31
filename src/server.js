@@ -61,6 +61,6 @@ db.query("SELECT 1")
   .catch((error) => {
     console.log("Error Connecting DB");
     console.log(error);
-    console.log(process.env.HOST, " ", process.env.PASSWORD)
+    console.log("ENV: ", process.env.HOST, " ", process.env.PASSWORD)
     process.exit(1);
   });
