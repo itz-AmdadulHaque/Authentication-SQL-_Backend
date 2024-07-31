@@ -1,4 +1,4 @@
-let whitelist = ["https://chat-app-frontend-7b6y.onrender.com"];
+let whitelist = ["example.com"];
 
 let corsOptions = {
   origin: function (origin, callback) {

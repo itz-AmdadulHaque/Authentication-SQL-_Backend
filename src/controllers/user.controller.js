@@ -102,7 +102,7 @@ const userLogin = asyncHandler(async (req, res) => {
   const isPasswordValid = await bcrypt.compare(password, user[0]?.password);
 
   if (!isPasswordValid) {
-    throw new ApiError(401, "Invalid user credentials");
+    throw new ApiError(401, "Invalid password");
   }
 
   // save refresh token to db and return access and refresh token
@@ -113,7 +113,7 @@ const userLogin = asyncHandler(async (req, res) => {
   // option for cookie
   const options = {
     httpOnly: true,
-    // secure: true,
+    secure: true,
     maxAge: 24 * 60 * 60 * 1000, // only in milisecond format
   };
 
@@ -137,12 +137,14 @@ const userLogout = asyncHandler(async (req, res) => {
     "UPDATE users SET refreshToken = ? WHERE id=?",
     [null, req?.user?.id]
   );
-  // if (response?.affectedRows !== 1) {
-  //   throw new ApiError(500, "Failed to logout");
-  // }
+
+  if (response?.affectedRows !== 1) {
+    throw new ApiError(500, "Failed to logout");
+  }
+
   const options = {
     httpOnly: true,
-    // secure: true,
+    secure: true,
   };
 
   return res
@@ -151,103 +153,83 @@ const userLogout = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"));
 });
 
-const allUser = asyncHandler(async (req, res, next) => {
-  const [user] = await db.query("SELECT block FROM users WHERE id = ?", [
-    req?.user?.id,
-  ]);
-  //user account is either deleted or blocked
-  if (user.length === 0 || user[0]?.block) {
-    next();
-  } else {
-    const [users] = await db.query(
-      "SELECT id, name, email, block, updatedAt FROM users"
-    );
+const allUser = asyncHandler(async (req, res) => {
+  const [users] = await db.query(
+    "SELECT id, name, email, block, updatedAt FROM users"
+  );
 
-    res.json(new ApiResponse(200, users, "All users list"));
+  if (users[0].length === 0) {
+    throw new ApiError(501, "Something went wrong while getting all users");
   }
+
+  res.json(new ApiResponse(200, users, "All users"));
 });
 
 // loged in user info
-const getUser = asyncHandler(async (req, res, next) => {
+const getUser = asyncHandler(async (req, res) => {
   const [user] = await db.query(
     "SELECT id, name, email, block, updatedAt FROM users WHERE id = ?",
     [req?.user?.id]
   );
 
-  if (user.length === 0 || user[0]?.block) {
-    next();
-  } else {
-    // if (user.length === 0) {
-    //   throw new ApiError(501, "Something went wrong while geting user info");
-    // }
-
-    res.status(201).json(new ApiResponse(201, user, "Loged in user Info"));
+  if (user.length === 0) {
+    throw new ApiError(501, "Something went wrong while geting user info");
   }
+
+  res.status(201).json(new ApiResponse(201, { user: user[0] }, "user Info"));
 });
 
-const deleteUsers = asyncHandler(async (req, res, next) => {
-  // check user account is either deleted or blocked
-  const [user] = await db.query("SELECT block FROM users WHERE id = ?", [
-    req?.user?.id,
-  ]);
-
-  if (user.length === 0 || user[0]?.block) {
-    next();
-  } else {
-    const { userIds } = req.body;
-    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-      throw new ApiError(400, "Invalid user IDs");
-    }
-
-    const [result] = await db.query("DELETE FROM users WHERE id IN (?)", [
-      userIds,
-    ]);
-    if (result.affectedRows !== userIds.length) {
-      throw new ApiError(500, "Failed to delete all selected users");
-    }
-
-    res
-      .status(201)
-      .json(new ApiResponse(200, {}, "Users deleted successfully"));
+const deleteUsers = asyncHandler(async (req, res) => {
+  const { userIds } = req.body;
+  if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+    throw new ApiError(400, "Invalid user IDs");
   }
+
+  const [result] = await db.query("DELETE FROM users WHERE id IN (?)", [
+    userIds,
+  ]);
+  
+  if (result.affectedRows !== userIds.length) {
+    throw new ApiError(500, "Failed to delete all selected users");
+  }
+
+  res.status(201).json(new ApiResponse(200, {}, "Users deleted successfully"));
 });
 
 // need update
 const blockUsers = asyncHandler(async (req, res, next) => {
-  //check user account is either deleted or blocked
-  const [user] = await db.query("SELECT block FROM users WHERE id = ?", [
-    req?.user?.id,
-  ]);
-  //user account is either deleted or blocked
-  if (user.length === 0 || user[0]?.block) {
-    next();
-  } else {
-    const { userIds, block } = req.body;
-    if (!userIds || !Array.isArray(userIds) || userIds.length === 0 || block === null || block===undefined) {
-      throw new ApiError(400, "Invalid user IDs");
-    }
-
-    const [result] = await db.query(
-      `UPDATE users SET block = ${block} WHERE id IN (?)`,
-      [userIds]
-    );
-    if (result.affectedRows !== userIds.length) {
-      throw new ApiError(
-        500,
-        `Failed to ${block ? "block" : "unblock"}  all selected users`
-      );
-    }
-
-    res
-      .status(201)
-      .json(
-        new ApiResponse(
-          200,
-          {},
-          `Users ${block ? "blocked" : "unblocked"} successfully`
-        )
-      );
+  const { userIds, block } = req.body;
+  if (
+    !userIds ||
+    !Array.isArray(userIds) ||
+    userIds.length === 0 ||
+    block === null ||
+    block === undefined
+  ) {
+    throw new ApiError(400, "Invalid user IDs");
   }
+
+  const [result] = await db.query(
+    `UPDATE users SET block = ${block} WHERE id IN (?)`,
+    [userIds]
+  );
+
+  if (result.affectedRows !== userIds.length) {
+    throw new ApiError(
+      500,
+      `Failed to ${block ? "block" : "unblock"}  all selected users`
+    );
+  }
+
+  res
+    .status(201)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        `Users ${block ? "blocked" : "unblocked"} successfully`
+      )
+    );
 });
 
 // refresh token rotation and access token generator
@@ -297,11 +279,10 @@ const refreshTokenRotation = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true, // this make cookie only accessble from backend
-    // secure: true,
+    secure: true,
     maxAge: 24 * 60 * 60 * 1000, // only in milisecond format
   };
 
-  // console.log("/////Old \n",oldRefreshToken, "\n /////new \n", refreshToken);
   return res.status(200).cookie("refreshToken", refreshToken, options).json(
     new ApiResponse(
       200,

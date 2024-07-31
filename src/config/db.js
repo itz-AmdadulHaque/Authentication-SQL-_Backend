@@ -2,7 +2,7 @@ import mysql from "mysql2/promise";
 
 const mySqlPool = mysql.createPool({
   host: process.env.HOST,
-//   port: process.env.DB_PORT,
+  port: process.env.DB_PORT,
   user: process.env.USER,
   password: process.env.PASSWORD,
   database: process.env.DATABASE,
@@ -39,7 +39,6 @@ const initializeDatabase = async () => {
     }
 
     // Check if the index on the id column exists
-    // Note: id is the PRIMARY KEY, so it's already indexed. This step is optional
     const [idIndexes] = await connection.query(`
         SHOW INDEX FROM users WHERE Key_name = 'idx_users_id'
       `);
@@ -63,9 +62,5 @@ const initializeDatabase = async () => {
 export default mySqlPool;
 export { initializeDatabase };
 
-// HOST = "sql.freedb.tech"
-// DB_PORT = 3306
-// USER = "freedb_amdad0041"
-// PASSWORD = "Kpp5K!fWVfY$@3X"
-// DATABASE = "freedb_Authentication"
+
 

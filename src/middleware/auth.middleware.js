@@ -12,7 +12,6 @@ const verifyJwt = asyncHandler(async (req, res, next) => {
   }
 
   const accessToken = authHeader.split(" ")[1];
-  // console.log(accessToken);
 
   //verify the token
   jwt.verify(
