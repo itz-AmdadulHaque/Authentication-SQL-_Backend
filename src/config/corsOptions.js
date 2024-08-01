@@ -1,4 +1,4 @@
-let whitelist = ["example.com"];
+let whitelist = ["https://authentication-sql-backend.onrender.com", "https://authentication-sql-frontend.onrender.com"];
 
 let corsOptions = {
   origin: function (origin, callback) {
