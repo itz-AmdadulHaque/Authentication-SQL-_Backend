@@ -14,7 +14,8 @@ const isBlock = asyncHandler(async (req, res, next) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.DEV_MODE !== "development",
+    sameSite: 'None', // None for cross-site requests
   };
 
   if (user.length === 0) {

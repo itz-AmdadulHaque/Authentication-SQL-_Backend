@@ -113,7 +113,8 @@ const userLogin = asyncHandler(async (req, res) => {
   // option for cookie
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.DEV_MODE !== "development",
+    sameSite: "None", // None for cross-site requests
     maxAge: 24 * 60 * 60 * 1000, // only in milisecond format
   };
 
@@ -144,7 +145,8 @@ const userLogout = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.DEV_MODE !== "development",
+    sameSite: "None", // None for cross-site requests
   };
 
   return res
@@ -188,7 +190,7 @@ const deleteUsers = asyncHandler(async (req, res) => {
   const [result] = await db.query("DELETE FROM users WHERE id IN (?)", [
     userIds,
   ]);
-  
+
   if (result.affectedRows !== userIds.length) {
     throw new ApiError(500, "Failed to delete all selected users");
   }
@@ -240,7 +242,11 @@ const refreshTokenRotation = asyncHandler(async (req, res) => {
     throw new ApiError(401, "No Refresh Token");
   }
 
-  res.clearCookie("refreshToken", { httpOnly: true, secure: true });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.DEV_MODE !== "development",
+    sameSite: "None", // None for cross-site requests
+  });
 
   //verify the token
   const decodedUser = jwt.verify(
@@ -278,8 +284,9 @@ const refreshTokenRotation = asyncHandler(async (req, res) => {
   );
 
   const options = {
-    httpOnly: true, // this make cookie only accessble from backend
-    secure: true,
+    httpOnly: true,
+    secure: process.env.DEV_MODE !== "development",
+    sameSite: "None", // None for cross-site requests
     maxAge: 24 * 60 * 60 * 1000, // only in milisecond format
   };
 
