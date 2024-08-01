@@ -19,7 +19,6 @@ const initializeDatabase = async () => {
           name VARCHAR(255) NOT NULL,
           block BOOLEAN DEFAULT FALSE,
           refreshToken VARCHAR(255) DEFAULT NULL,
-          createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
           updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `);
